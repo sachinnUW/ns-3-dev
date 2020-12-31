@@ -37,7 +37,7 @@ if len(times2) != 0:
 plt.xlabel('Time (s)')
 plt.ylabel('RSRP (dBm)')
 plt.title('RSRP plot for Successful HO')
-plt.show(block)
+plt.show()
 
 # Run the HO simulation with higher speed for RLF.
 print("Run with TTT = 50ms and speed = 21m/s for RLF.")
@@ -70,4 +70,4 @@ if len(times2) != 0:
 plt.xlabel('Time (s)')
 plt.ylabel('RSRP (dBm)')
 plt.title('RSRP plot for Successful HO')
-plt.show(block)
+plt.show()
