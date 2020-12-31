@@ -49,6 +49,12 @@ private:
   */
   void PrintUePosition (uint64_t imsi);
 
+  /*
+   * \param context
+   * Parse context strings of the form "/NodeList/0/DeviceList/0/Mac/Assoc" to extract the NodeId
+  */
+  uint32_t ContextToNodeId (std::string context);
+
   // Constant variables for simulation
   const uint16_t m_numberOfUes;
   const uint16_t m_numberOfEnbs;
@@ -57,7 +63,7 @@ private:
   const double m_yForUe;   		// m
   const double m_speed;    		// m/s
   const double m_enbTxPowerDbm; 	// dB
-  const double m_simTime;  		// s
+  const double m_simTime;  		// s  
 
   // Specifics for RLFs
   const double m_qOut;			// dB
@@ -122,11 +128,22 @@ private:
   void NotifyRandomAccessErrorUe (uint64_t imsi, uint16_t cellId, uint16_t rnti);
   void NotifyConnectionTimeoutUe (uint64_t imsi, uint16_t cellId, uint16_t rnti, uint8_t connEstFailCount);
   void NotifyRaResponseTimeoutUe (uint64_t imsi, bool contention, uint8_t preambleTxCounter, uint8_t maxPreambleTxLimit);
+  void NotifyPacketSinkRx (std::string context, Ptr<const Packet> packet, const Address &address, const Address &receiver);
+  void NotifyCqiReport (std::string context, uint16_t rnti, uint8_t cqi);  
+  void CongStateTrace (const TcpSocketState::TcpCongState_t oldValue, const TcpSocketState::TcpCongState_t newValue);
+
+  // Custom callback that schedules itself periodically.
+  // void TracePosition (Ptr<Node> ue, Time interval);
+
+  // Function to connect CongState callback late
+  void ConnectTcpTrace (void);
 
   // Functions for configuration
   void ConfigureSettings();
   void ConfigureCallbacks();
   void ConfigureLogging();
+  void OpenCustomLogs();
+  void CloseFileDescriptors();
   bool SetRrc(std::string useRealRrc = "true");
   bool SetSINRCalc(std::string sinrFromPdcchOnly = "true");
 
@@ -139,6 +156,10 @@ private:
   
   // Streams for outputting stuff from callbacks
   std::ofstream m_ueMeasurements;
+  std::ofstream m_packetSinkRx;
+  std::ofstream m_cqiTrace;
+  std::ofstream m_tcpCongStateTrace;
+  std::ofstream m_positionTrace;
 
 public:
 
@@ -172,7 +193,6 @@ public:
 	ConfigureCallbacks();	
 	ConfigureLogging();
 
-          
   }
 
   void Run();
