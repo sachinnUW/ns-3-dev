@@ -190,8 +190,8 @@ public:
 	SetupInternet();
 
 	// Add callbacks and enable logging.
-	ConfigureCallbacks();	
 	ConfigureLogging();
+	ConfigureCallbacks();	
 
   }
 
