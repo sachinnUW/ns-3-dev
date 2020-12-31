@@ -601,6 +601,8 @@ LenaHandoverSimple::ConfigureCallbacks(){
 	// Additional callbacks related to the experiment
 	Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/LteUePhy/ReportUeMeasurements",
                 MakeCallback (&LenaHandoverSimple::NotifyUeMeasurements, this));
+  	Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/PhySyncDetection",
+                MakeCallback (&LenaHandoverSimple::PhySyncDetection, this));
         // Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/RxWithAddresses",
         //        MakeCallback (&LenaHandoverSimple::NotifyPacketSinkRx, this));
 
@@ -619,8 +621,6 @@ LenaHandoverSimple::ConfigureCallbacks(){
 
 	// Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/StateTransition",
         //        MakeCallback (&LenaHandoverSimple::UeStateTransition, this));
-  	// Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/PhySyncDetection",
-        //        MakeCallback (&LenaHandoverSimple::PhySyncDetection, this));
         // Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteEnbRrc/NotifyConnectionRelease",
         //        MakeCallback (&LenaHandoverSimple::NotifyConnectionReleaseAtEnodeB, this));
   	// Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteEnbRrc/RrcTimeout",
@@ -694,7 +694,7 @@ LenaHandoverSimple::SetupInternet(){
 	m_internet.Install (m_remoteHostContainer);
 
 	// Create the m_internet.
-	m_p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
+	m_p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Mb/s")));
 	m_p2ph.SetDeviceAttribute ("Mtu", UintegerValue (1500));
 	m_p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.010)));
 	m_internetDevices = m_p2ph.Install (m_pgw, m_remoteHost);
