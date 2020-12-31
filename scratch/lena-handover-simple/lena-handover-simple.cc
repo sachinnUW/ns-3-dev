@@ -105,11 +105,11 @@ LenaHandoverSimple::NotifyUeMeasurements (uint16_t imsi,
 				uint8_t ccId)
 {
   m_ueMeasurements << std::setw (7) << std::setprecision (3) << std::fixed << Simulator::Now ().GetSeconds () << " " 
-    << std::setw (3) << imsi << " "
-    << std::setw (3) << cellId << " " 
-    << std::setw (3) << (servingCell ? "1" : "0") << " " 
-    << std::setw (8) << rsrpDbm << " " 
-    << std::setw (8) << rsrqDbm << std::endl;
+    << std::setw (4) << imsi << " "
+    << std::setw (7) << cellId << " " 
+    << std::setw (7) << (servingCell ? "1" : "0") << " " 
+    << std::setw (20) << rsrpDbm << " " 
+    << std::setw (15) << rsrqDbm << std::endl;
 }
 
 /**
@@ -406,6 +406,75 @@ LenaHandoverSimple::NotifyRaResponseTimeoutUe (uint64_t imsi,
             << std::endl; 
 }
 
+/**
+ * \param UE node, interval for displaying events
+ * Function that schedules itself periodically
+
+void
+LenaHandoverSimple::TracePosition (Ptr<Node> ue, Time interval)
+{
+  Vector v = ue->GetObject<MobilityModel> ()->GetPosition ();
+  m_positionTrace << std::setw (7) << std::setprecision (3) << std::fixed << Simulator::Now ().GetSeconds () << " " 
+    << v.x << " " << v.y << std::endl;
+  Simulator::Schedule (interval, &LenaHandoverSimple::TracePosition, ue, interval);
+}*/
+
+/**
+ * \param context packet, address, receiver reported from "$ns3::PacketSink/Rx"
+ * Callback to display UE position periodically
+*/
+void
+LenaHandoverSimple::NotifyPacketSinkRx (std::string context, Ptr<const Packet> packet, const Address &address, const Address &receiver)
+{
+  m_packetSinkRx << std::setw (7) << std::setprecision (3) << std::fixed << Simulator::Now ().GetSeconds () 
+    << " " << std::setw (5) << packet->GetSize () << std::setw (5) << " " << receiver << std::endl;
+}
+
+/*
+ * \param context
+ * Parse context strings of the form "/NodeList/9/DeviceList/9/Mac/Assoc" to extract the NodeId.
+*/
+uint32_t
+LenaHandoverSimple::ContextToNodeId (std::string context)
+{
+  std::string sub = context.substr (10);  // skip "/NodeList/"
+  uint32_t pos = sub.find ("/Device");
+  return atoi (sub.substr (0,pos).c_str ());
+}
+
+/*
+ * \param context, rnti, cqi reported from "$ns3::RrFfMacScheduler/WidebandCqiReport"
+ * Parse context strings of the form "/NodeList/9/DeviceList/9/Mac/Assoc" to extract the NodeId
+*/
+void
+LenaHandoverSimple::NotifyCqiReport (std::string context, uint16_t rnti, uint8_t cqi)
+{
+  m_cqiTrace << std::setw (7) << std::setprecision (3) << std::fixed << Simulator::Now ().GetSeconds () << " "
+    << std::setw (4) << ContextToNodeId (context) << " "
+    << std::setw (8) << rnti << " " 
+    << std::setw (4) << static_cast<uint16_t> (cqi) << std::endl;
+}
+
+
+/*
+ * \param oldValue, newValue reported from "CongState"
+ * Callback to display the congestion state of the TCP
+*/
+void
+LenaHandoverSimple::CongStateTrace (const TcpSocketState::TcpCongState_t oldValue, const TcpSocketState::TcpCongState_t newValue)
+{
+  m_tcpCongStateTrace << std::setw (7) << std::setprecision (3) << std::fixed << Simulator::Now ().GetSeconds () << " "
+    << std::setw (4) << TcpSocketState::TcpCongStateName[newValue] << std::endl;
+}
+
+// Function to connect TCP trace; this callback is connected in this manner cos it needs to start late.
+void
+LenaHandoverSimple::ConnectTcpTrace (void)
+{
+  Config::ConnectWithoutContext ("/NodeList/*/$ns3::TcpL4Protocol/SocketList/*/CongState", MakeCallback (&LenaHandoverSimple::CongStateTrace, this));
+}
+
+// Function to configure logging for ns-3 components and open log files
 void
 LenaHandoverSimple::ConfigureLogging(){
 
@@ -438,12 +507,41 @@ LenaHandoverSimple::ConfigureLogging(){
 	// m_lteHelper->EnableMacTraces ();
 	m_lteHelper->EnablePhyTraces ();
 
-	// Open logging files for measurements.
-  	m_ueMeasurements.open ("lena-handover-simple.ue-measurements.dat", std::ofstream::out);
-  	m_ueMeasurements << "# time   imsi   cellId   isServingCell?  RSRP(dBm)  RSRQ(dB)" << std::endl;
+	// Open logging files for additional experiment logging.
+	OpenCustomLogs();
   	
 }
 
+// Function to open custom log files
+void
+LenaHandoverSimple::OpenCustomLogs(){
+
+  	m_ueMeasurements.open ("lena-handover-simple-ue-measurements.dat", std::ofstream::out);
+  	m_ueMeasurements << "# time   imsi   cellId   isServingCell?  RSRP(dBm)	 RSRQ(dB)" << std::endl;
+	m_packetSinkRx.open ("lena-handover-simple-tcp-receive.dat", std::ofstream::out);
+  	m_packetSinkRx << "# time   bytesRx" << std::endl;
+	m_positionTrace.open ("lena-handover-simple-position.dat", std::ofstream::out);
+  	m_positionTrace << "# time    x		y" << std::endl; 
+ 	m_cqiTrace.open ("lena-handover-simple-cqi.dat", std::ofstream::out);
+  	m_cqiTrace << "# time   nodeId   rnti  cqi" << std::endl;
+  	m_tcpCongStateTrace.open ("lena-handover-simple-tcp-state.dat", std::ofstream::out);
+  	m_tcpCongStateTrace << "# time    OldState NewState" << std::endl; 	
+
+}
+
+// Function to close custom descriptor files
+void
+LenaHandoverSimple::CloseFileDescriptors(){
+
+	m_ueMeasurements.close ();
+  	m_cqiTrace.close ();
+  	m_packetSinkRx.close ();
+  	m_tcpCongStateTrace.close ();
+  	m_positionTrace.close ();
+
+}
+
+// Function to configure default attributes for different components of the NS-3 simulation.
 void
 LenaHandoverSimple::ConfigureSettings(){
 
@@ -479,6 +577,7 @@ LenaHandoverSimple::ConfigureSettings(){
 	
 }
 
+// Function to actually add callbacks based on the code
 void
 LenaHandoverSimple::ConfigureCallbacks(){
 
@@ -496,14 +595,32 @@ LenaHandoverSimple::ConfigureCallbacks(){
                 MakeCallback (&LenaHandoverSimple::NotifyHandoverEndOkEnb, this));
   	Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverEndOk",
                 MakeCallback (&LenaHandoverSimple::NotifyHandoverEndOkUe, this));
+  	Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/RadioLinkFailure",
+                MakeCallback (&LenaHandoverSimple::RadioLinkFailure, this));
+
+	// Additional callbacks related to the experiment
 	Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/LteUePhy/ReportUeMeasurements",
                 MakeCallback (&LenaHandoverSimple::NotifyUeMeasurements, this));
+        // Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/RxWithAddresses",
+        //        MakeCallback (&LenaHandoverSimple::NotifyPacketSinkRx, this));
+
+  	// Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/$ns3::LteEnbNetDevice/ComponentCarrierMap/*/FfMacScheduler/$ns3::RrFfMacScheduler/WidebandCqiReport", MakeCallback (&LenaHandoverSimple::NotifyCqiReport, this));
+	
+	// Config::ConnectWithoutContext ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/Rx",
+        //         MakeCallback (&LenaHandoverSimple::NotifyPacketSinkRx, this));  	
+
+	// Initiate position tracing for single UE.
+  	// Simulator::Schedule (Seconds (0), &LenaHandoverSimple::TracePosition, m_ueNodes.Get(0), m_positionTracingInterval);
+
+	// Delay trace connection until TCP socket comes into existence.
+  	// Simulator::Schedule (Seconds (1.001), &LenaHandoverSimple::ConnectTcpTrace);
+
+	// Additional callbacks for in-sync, out-of-sync detection, UE state transition, RRC messages etc.
+
 	// Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/StateTransition",
         //        MakeCallback (&LenaHandoverSimple::UeStateTransition, this));
   	// Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/PhySyncDetection",
         //        MakeCallback (&LenaHandoverSimple::PhySyncDetection, this));
-  	Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/RadioLinkFailure",
-                MakeCallback (&LenaHandoverSimple::RadioLinkFailure, this));
         // Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteEnbRrc/NotifyConnectionRelease",
         //        MakeCallback (&LenaHandoverSimple::NotifyConnectionReleaseAtEnodeB, this));
   	// Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteEnbRrc/RrcTimeout",
@@ -514,13 +631,12 @@ LenaHandoverSimple::ConfigureCallbacks(){
         //        MakeCallback (&LenaHandoverSimple::NotifyConnectionTimeoutUe, this));
   	// Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/$ns3::LteUeNetDevice/ComponentCarrierMapUe/*/LteUeMac/RaResponseTimeout",
         //        MakeCallback (&LenaHandoverSimple::NotifyRaResponseTimeoutUe, this));
-
-	// Callback to display measurement reports; commented out for clarity of logging
         // Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteEnbRrc/RecvMeasurementReport",
         //        MakeCallback (&LenaHandoverSimple::NotifyRecvMeasurementReport, this));
 
 }
 
+// Setup LTE, start EPC, select HO algo and connect X2 interface.
 void
 LenaHandoverSimple::SetupLTE(){
 
@@ -559,6 +675,7 @@ LenaHandoverSimple::SetupLTE(){
 
 }
 
+// Set the channel model; set to log distance model for enforcing handovers.
 void
 LenaHandoverSimple::SetChannelModel(){
 
@@ -569,6 +686,7 @@ LenaHandoverSimple::SetChannelModel(){
 
 }
 
+// Setup remote host, install IP stack and install the UDP protocol.
 void
 LenaHandoverSimple::SetupInternet(){
 
@@ -599,6 +717,7 @@ LenaHandoverSimple::SetupInternet(){
 
 }
 
+// Set mobility models for both UE and eNBs and install LTE devices on them.
 void
 LenaHandoverSimple::SetMobility(){
 
@@ -629,6 +748,7 @@ LenaHandoverSimple::SetMobility(){
 
 }
 
+// Install UDP protocol with client/server apps on each UE with bidirectional packet filters.
 void
 LenaHandoverSimple::InstallUDP(uint16_t dlPort, uint16_t ulPort){
 
@@ -641,43 +761,60 @@ LenaHandoverSimple::InstallUDP(uint16_t dlPort, uint16_t ulPort){
 
   for (uint32_t u = 0; u < m_numberOfUes; ++u)
     {
+   
+      // Go to each UE.
       Ptr<Node> ue = m_ueNodes.Get (u);
-      // Set the default gateway for the UE
+   
+      // Set the default gateway for the UE.
       Ptr<Ipv4StaticRouting> ueStaticRouting = m_ipv4RoutingHelper.GetStaticRouting (ue->GetObject<Ipv4> ());
       ueStaticRouting->SetDefaultRoute (m_epcHelper->GetUeDefaultGatewayAddress (), 1);
 
+      // Add UDP client applications at all UEs.
       for (uint32_t b = 0; b < m_numBearersPerUe; ++b)
         {
+	
+	  // Increment the port for each UE.
           ++dlPort;
           ++ulPort;
-
+	
+	  // Client and server apps for each UE
           ApplicationContainer clientApps;
           ApplicationContainer serverApps;
 
+          // Install client/server apps for DL.
           UdpClientHelper dlClientHelper (m_ueIpIfaces.GetAddress (u), dlPort);
           clientApps.Add (dlClientHelper.Install (m_remoteHost));
           PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory",
                                                InetSocketAddress (Ipv4Address::GetAny (), dlPort));
           serverApps.Add (dlPacketSinkHelper.Install (ue));
 
+          // Install client/server apps for UL.
           UdpClientHelper ulClientHelper (m_remoteHostAddr, ulPort);
           clientApps.Add (ulClientHelper.Install (ue));
           PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory",
                                                InetSocketAddress (Ipv4Address::GetAny (), ulPort));
           serverApps.Add (ulPacketSinkHelper.Install (m_remoteHost));
 
+          // EPC traffic flow template with UL/DL traffic filters
           Ptr<EpcTft> tft = Create<EpcTft> ();
+
+          // DL traffic filter with assigned ports
           EpcTft::PacketFilter dlpf;
           dlpf.localPortStart = dlPort;
           dlpf.localPortEnd = dlPort;
           tft->Add (dlpf);
+
+          // UL traffic filter with assigned ports
           EpcTft::PacketFilter ulpf;
           ulpf.remotePortStart = ulPort;
           ulpf.remotePortEnd = ulPort;
           tft->Add (ulpf);
+
+          // Activate EPS bearer with QOS specifications
           EpsBearer bearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT);
           m_lteHelper->ActivateDedicatedEpsBearer (m_ueLteDevs.Get (u), bearer, tft);
-
+	
+	  // Start the client and server apps based on the random start time.
           Time startTime = Seconds (startTimeSeconds->GetValue ());
           serverApps.Start (startTime);
           clientApps.Start (startTime);
@@ -687,25 +824,31 @@ LenaHandoverSimple::InstallUDP(uint16_t dlPort, uint16_t ulPort){
 
 }
 
+// Function that actually runs the simulation
 void
-LenaHandoverSimple::Run(){
+LenaHandoverSimple::Run(){  
 
-  // Attach all UEs to the first eNodeB. 
-  // Use m_lteHelper->Attach (m_ueLteDevs.Get(i)) for initial access instead of manually assignment.
+  // Initial access for UEs.
+  // Use m_lteHelper->Attach (m_ueLteDevs.Get(i), enbLteDevs.Get (0)) for manually attaching all UEs to the first eNodeB. 
   for (uint16_t i = 0; i < m_numberOfUes; i++)
-      m_lteHelper->Attach (m_ueLteDevs.Get (i));
+   	m_lteHelper->Attach (m_ueLteDevs.Get (i));
     
-  // Add X2 interface
+  // Add X2 interface between eNBs.
   m_lteHelper->AddX2Interface (m_enbNodes);
 
   // Custom X2-based Handover at a given time.
   // m_lteHelper->HandoverRequest (Seconds (0.100), m_ueLteDevs.Get (0), m_enbLteDevs.Get (0), m_enbLteDevs.Get (1));
 
+  // Set the simulator stopping time.
   Simulator::Stop (Seconds (m_simTime));
+
+  // The RUN command
   Simulator::Run ();
+
+  // Destroy the simulator.
   Simulator::Destroy ();
 
   // Close any open file descriptors
-  m_ueMeasurements.close ();
+  CloseFileDescriptors();
 
 }
