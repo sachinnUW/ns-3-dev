@@ -603,8 +603,8 @@ LenaHandoverSimple::ConfigureCallbacks(){
                 MakeCallback (&LenaHandoverSimple::NotifyUeMeasurements, this));
   	Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/PhySyncDetection",
                 MakeCallback (&LenaHandoverSimple::PhySyncDetection, this));
-        // Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/RxWithAddresses",
-        //        MakeCallback (&LenaHandoverSimple::NotifyPacketSinkRx, this));
+        Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/RxWithAddresses",
+                MakeCallback (&LenaHandoverSimple::NotifyPacketSinkRx, this));
 
   	// Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/$ns3::LteEnbNetDevice/ComponentCarrierMap/*/FfMacScheduler/$ns3::RrFfMacScheduler/WidebandCqiReport", MakeCallback (&LenaHandoverSimple::NotifyCqiReport, this));
 	

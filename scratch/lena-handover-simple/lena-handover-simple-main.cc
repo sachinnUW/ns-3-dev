@@ -95,8 +95,8 @@ main (int argc, char *argv[])
   std::string useRealRrc = "true";              // string for inputting useRealRrc, "true" implies only real RRC based on ASN encoding/decoding is used
 
   // Constants specific to RLF detection; 3GPP 36.133
-  uint16_t numQoutEvalSf = 20;                  // [ms] number of subframes of 1 ms each; set to small value for quick detection; numQoutEvalSf is defined as TEval_Qout 
-  uint16_t numQinEvalSf = 10;                   // [ms] number of subframes of 1 ms each; set to small value for quick detection; numQinEvalSf is defined as TEval_Qin
+  uint16_t numQoutEvalSf = 20;                  // [ms] number of subframes of 1 ms each; set to small value for quick detection; numQoutEvalSf is defined as TEval_Qout in #36.133
+  uint16_t numQinEvalSf = 10;                   // [ms] number of subframes of 1 ms each; set to small value for quick detection; numQinEvalSf is defined as TEval_Qin in #36.133
   double qOut = -5;                             // [dB] set to ns-3 default of -5 dB; 36.839 sets it to -8 dB
   double qIn = -3.9;                            // [dB] set to ns-3 default of -3.9 dB; 36.839 sets it to -6 dB
 
@@ -109,7 +109,7 @@ main (int argc, char *argv[])
   // Specific to simulation
   cmd.AddValue ("simTime", "Total duration of the simulation (in seconds)", simTime);
   cmd.AddValue ("speed", "Speed of the UE (default = 20 m/s)", UEspeed);
-  cmd.AddValue ("txPower", "TX power used by HeNBs (default = 43.0 dBm)", enbTxPowerDbm);
+  cmd.AddValue ("txPower", "TX power used by HeNBs (default = 43.0 dBm); unused currently", enbTxPowerDbm); // Unused currently
   cmd.AddValue ("neNBs", "Number of eNBs (default = 2)", num_eNB);
   cmd.AddValue ("nBearers", "Number of EPS bearers per UE (default = 0)", num_Bearers);
   cmd.AddValue ("inter_eNB_dist", "Distance between eNBs (default = 500.0 m)", inter_eNB_dist);
