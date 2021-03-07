@@ -142,20 +142,21 @@ main (int argc, char *argv[])
   // LogComponentEnable ("A3RsrpHandoverAlgorithm", logLevel);
 
   uint16_t numberOfUes = 1;
-  uint16_t numberOfEnbs = 2;
+  uint16_t numberOfEnbs = 5;
   uint16_t numBearersPerUe = 0;
   double distance = 500.0; // m
   double yForUe = 500.0;   // m
   double speed = 20;       // m/s
   double simTime = (double)(numberOfEnbs + 1) * distance / speed; // 1500 m / 20 m/s = 75 secs
-  double enbTxPowerDbm = 46.0;
+  double enbTxPowerDbm = 23.0;
 
   // change some default attributes so that they are reasonable for
   // this scenario, but do this before processing command line
   // arguments, so that the user is allowed to override these settings
   Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (10)));
   Config::SetDefault ("ns3::UdpClient::MaxPackets", UintegerValue (1000000));
-  Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
+  Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (false));
+  Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_AM_ALWAYS));
 
   // Command line arguments
   CommandLine cmd (__FILE__);
@@ -171,17 +172,17 @@ main (int argc, char *argv[])
   lteHelper->SetEpcHelper (epcHelper);
   lteHelper->SetSchedulerType ("ns3::RrFfMacScheduler");
 
-  lteHelper->SetHandoverAlgorithmType ("ns3::A2A4RsrqHandoverAlgorithm");
-  lteHelper->SetHandoverAlgorithmAttribute ("ServingCellThreshold",
-                                            UintegerValue (30));
-  lteHelper->SetHandoverAlgorithmAttribute ("NeighbourCellOffset",
-                                            UintegerValue (1));
+  //lteHelper->SetHandoverAlgorithmType ("ns3::A2A4RsrqHandoverAlgorithm");
+  //lteHelper->SetHandoverAlgorithmAttribute ("ServingCellThreshold",
+  //                                          UintegerValue (30));
+  //lteHelper->SetHandoverAlgorithmAttribute ("NeighbourCellOffset",
+  //                                          UintegerValue (1));
 
-  //  lteHelper->SetHandoverAlgorithmType ("ns3::A3RsrpHandoverAlgorithm");
-  //  lteHelper->SetHandoverAlgorithmAttribute ("Hysteresis",
-  //                                            DoubleValue (3.0));
-  //  lteHelper->SetHandoverAlgorithmAttribute ("TimeToTrigger",
-  //                                            TimeValue (MilliSeconds (256)));
+    lteHelper->SetHandoverAlgorithmType ("ns3::A3RsrpHandoverAlgorithm");
+    lteHelper->SetHandoverAlgorithmAttribute ("Hysteresis",
+                                              DoubleValue (3.0));
+    lteHelper->SetHandoverAlgorithmAttribute ("TimeToTrigger",
+                                              TimeValue (MilliSeconds (40)));
 
   Ptr<Node> pgw = epcHelper->GetPgwNode ();
 
@@ -244,10 +245,18 @@ main (int argc, char *argv[])
 
   // Install Mobility Model in UE
   MobilityHelper ueMobility;
-  ueMobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
+
+  ueMobility.SetPositionAllocator ("ns3::GridPositionAllocator",
+                                   "MinX", DoubleValue (0.0),
+                                   "MinY", DoubleValue (0.0),
+                                   "DeltaX", DoubleValue (5.0),
+                                   "DeltaY", DoubleValue (10.0),
+                                   "GridWidth", UintegerValue (3),
+                                   "LayoutType", StringValue ("RowFirst"));
+  ueMobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", "Bounds", RectangleValue (Rectangle (0, 2*yForUe, 0, distance*(numberOfEnbs + 1))));
   ueMobility.Install (ueNodes);
   ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (0, yForUe, 0));
-  ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (speed, 0, 0));
+  //ueNodes.Get (0)->GetObject<RandomWalk2dMobilityModel> ()->SetVelocity (Vector (speed, 0, 0));
 
   // Install LTE Devices in eNB and UEs
   Config::SetDefault ("ns3::LteEnbPhy::TxPower", DoubleValue (enbTxPowerDbm));
@@ -262,7 +271,7 @@ main (int argc, char *argv[])
   // Attach all UEs to the first eNodeB
   for (uint16_t i = 0; i < numberOfUes; i++)
     {
-      lteHelper->Attach (ueLteDevs.Get (i), enbLteDevs.Get (0));
+      lteHelper->Attach (ueLteDevs.Get (i));
     }
 
 

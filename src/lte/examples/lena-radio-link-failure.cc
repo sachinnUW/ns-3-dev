@@ -98,10 +98,10 @@ NotifyConnectionEstablishedEnb (std::string context,
   //connects multiple time to cell 1 we count N310
   //indication correctly, i.e., for each RLF UE RRC should receive
   //configured number of N310 indications.
-  if (cellId == 1)
-    {
-      counterN310FirsteNB = 0;
-    }
+  //if (cellId == 1)
+  //  {
+  //    counterN310FirsteNB = 0;
+  //  }
 }
 
 /// Map each of UE RRC states to its string representation.
@@ -167,7 +167,7 @@ void PhySyncDetection (uint16_t n310, uint64_t imsi, uint16_t rnti, uint16_t cel
             << ", Cell id " << cellId << ", " << type << ", no of sync indications: " << +count
             << std::endl;
 
-  if (type == "Notify out of sync" && cellId == 1)
+  /*if (type == "Notify out of sync" && cellId == 1)
     {
       ++counterN310FirsteNB;
       if (counterN310FirsteNB == n310)
@@ -175,7 +175,7 @@ void PhySyncDetection (uint16_t n310, uint64_t imsi, uint16_t rnti, uint16_t cel
           t310StartTimeFirstEnb = Simulator::Now ();
         }
       NS_LOG_DEBUG ("counterN310FirsteNB = " << counterN310FirsteNB);
-    }
+    }*/
 }
 
 void RadioLinkFailure (Time t310, uint64_t imsi, uint16_t cellId, uint16_t rnti)
@@ -187,10 +187,10 @@ void RadioLinkFailure (Time t310, uint64_t imsi, uint16_t cellId, uint16_t rnti)
 
   PrintUePosition (imsi);
 
-  if (cellId == 1)
-    {
-      NS_ABORT_MSG_IF ((Simulator::Now () - t310StartTimeFirstEnb) != t310, "T310 timer expired at wrong time");
-    }
+  //if (cellId == 1)
+  //  {
+  //    NS_ABORT_MSG_IF ((Simulator::Now () - t310StartTimeFirstEnb) != t310, "T310 timer expired at wrong time");
+  //  }
 }
 
 void
@@ -222,7 +222,7 @@ NotifyRaResponseTimeoutUe (uint64_t imsi, bool contention,
             << ", preamble Tx Counter " << (uint16_t) preambleTxCounter
             << ", Max Preamble Tx Limit " << (uint16_t) maxPreambleTxLimit
             << ", UE RA response timeout" << std::endl;
-  NS_FATAL_ERROR ("NotifyRaResponseTimeoutUe");
+  //NS_FATAL_ERROR ("NotifyRaResponseTimeoutUe");
 }
 
 void
@@ -278,8 +278,8 @@ main (int argc, char *argv[])
   double interSiteDistance = 1200;
   uint16_t n311 = 1;
   uint16_t n310 = 1;
-  Time t310 = Seconds (1);
-  bool useIdealRrc = true;
+  Time t310 = MilliSeconds (200);
+  bool useIdealRrc = false;
   bool enableCtrlErrorModel = true;
   bool enableDataErrorModel = true;
   bool enableNsLogs = false;
@@ -313,18 +313,20 @@ main (int argc, char *argv[])
 
   uint16_t numberOfUes = 1;
   uint16_t numBearersPerUe = 1;
-  double eNodeB_txPower = 43;
+  double eNodeB_txPower = 35;
 
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (useIdealRrc));
   Config::SetDefault ("ns3::LteSpectrumPhy::CtrlErrorModelEnabled", BooleanValue (enableCtrlErrorModel));
   Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (enableDataErrorModel));
 
-  Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (60 * 1024));
+  Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_AM_ALWAYS));
+
+  //Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (60 * 1024));
 
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
   Ptr<PointToPointEpcHelper> epcHelper = CreateObject<PointToPointEpcHelper> ();
   lteHelper->SetEpcHelper (epcHelper);
-
+  
   lteHelper->SetPathlossModelType (TypeId::LookupByName ("ns3::LogDistancePropagationLossModel"));
   lteHelper->SetPathlossModelAttribute ("Exponent", DoubleValue (3.9));
   lteHelper->SetPathlossModelAttribute ("ReferenceLoss", DoubleValue (38.57)); //ref. loss in dB at 1m for 2.025GHz
@@ -553,9 +555,9 @@ main (int argc, char *argv[])
 
   Simulator::Run ();
 
-  NS_ABORT_MSG_IF (counterN310FirsteNB != n310, "UE RRC should receive "
-                   << n310 << " out-of-sync indications in Cell 1."
-                   " Total received = " << counterN310FirsteNB);
+  //NS_ABORT_MSG_IF (counterN310FirsteNB != n310, "UE RRC should receive "
+  //                 << n310 << " out-of-sync indications in Cell 1."
+  //                 " Total received = " << counterN310FirsteNB);
 
   Simulator::Destroy ();
 
