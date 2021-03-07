@@ -2443,9 +2443,14 @@ void
 LteEnbRrc::DoRecvIdealUeContextRemoveRequest (uint16_t rnti)
 {
   NS_LOG_FUNCTION (this << rnti);
-  GetUeManager (rnti)->RecvIdealUeContextRemoveRequest (rnti);
-  //delete the UE context at the eNB
-  RemoveUe (rnti);
+
+  if (HasUeManager(rnti)){
+
+          GetUeManager (rnti)->RecvIdealUeContextRemoveRequest (rnti);
+          //delete the UE context at the eNB
+          RemoveUe (rnti);
+  }
+
 }
 
 void
