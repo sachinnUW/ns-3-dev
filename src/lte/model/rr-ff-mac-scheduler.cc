@@ -103,6 +103,10 @@ RrFfMacScheduler::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&RrFfMacScheduler::m_ulGrantMcs),
                    MakeUintegerChecker<uint8_t> ())
+    .AddTraceSource ("WidebandDlCqiReport",
+                     "Wideband CQI report received",
+                     MakeTraceSourceAccessor (&RrFfMacScheduler::m_widebandDlCqiReport),
+                     "ns3::RrFfMacScheduler::WidebandDlCqiReportTracedCallback")
   ;
   return tid;
 }
@@ -1123,7 +1127,8 @@ RrFfMacScheduler::DoSchedDlCqiInfoReq (const struct FfMacSchedSapProvider::Sched
               std::map <uint16_t,uint32_t>::iterator itTimers;
               itTimers = m_p10CqiTimers.find (rnti);
               (*itTimers).second = m_cqiTimersThreshold;
-            }
+            }          
+          m_widebandDlCqiReport (rnti, params.m_cqiList.at (i).m_wbCqi.at(0));
         }
       else if ( params.m_cqiList.at (i).m_cqiType == CqiListElement_s::A30 )
         {
@@ -1669,7 +1674,6 @@ RrFfMacScheduler::DoSchedUlCqiInfoReq (const struct FfMacSchedSapProvider::Sched
             (*itTimers).second = m_cqiTimersThreshold;
 
           }
-
 
       }
       break;

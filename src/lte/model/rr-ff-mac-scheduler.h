@@ -30,6 +30,7 @@
 #include <ns3/lte-common.h>
 #include <ns3/lte-amc.h>
 #include <ns3/lte-ffr-sap.h>
+#include <ns3/traced-callback.h>
 
 #define HARQ_PROC_NUM 8
 #define HARQ_DL_TIMEOUT 11
@@ -100,6 +101,14 @@ public:
    * \param txMode the transmission mode
    */
   void TransmissionModeConfigurationUpdate (uint16_t rnti, uint8_t txMode);
+
+  /**
+   * TracedCallback signature for the Wideband DL CQI report.
+   *
+   * \param [in] rnti RNTI corresponding to the report
+   * \param [in] cqi Wideband DL CQI report for this RNTI
+   */
+  typedef void (* WidebandDlCqiReportTracedCallback) (uint16_t rnti, uint8_t cqi);
 
 private:
   //
@@ -351,6 +360,8 @@ private:
   std::vector <struct RachListElement_s> m_rachList; ///< RACH list
   std::vector <uint16_t> m_rachAllocationMap; ///< RACH allocation map
   uint8_t m_ulGrantMcs; ///< MCS for UL grant (default 0)
+
+  TracedCallback<uint16_t, uint8_t> m_widebandDlCqiReport;
 };
 
 } // namespace ns3

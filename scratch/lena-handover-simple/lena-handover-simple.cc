@@ -454,13 +454,11 @@ LenaHandoverSimple::ContextToNodeId (std::string context)
  * Parse context strings of the form "/NodeList/9/DeviceList/9/Mac/Assoc" to extract the NodeId
 */
 void
-LenaHandoverSimple::NotifyCqiReport (std::string context,
-				     uint16_t rnti,
+LenaHandoverSimple::NotifyCqiReport (uint16_t rnti,
 				     uint8_t cqi)
 {
 
   m_cqiTrace << std::setw (7) << std::setprecision (3) << std::fixed << Simulator::Now ().GetSeconds () << " "
-    	     << std::setw (4) << ContextToNodeId (context) << " "
     	     << std::setw (8) << rnti << " " 
     	     << std::setw (4) << static_cast<uint16_t> (cqi) 
 	     << std::endl;
@@ -539,7 +537,7 @@ LenaHandoverSimple::OpenCustomLogs () {
 
   m_ueMeasurements.open ("tmp/lena-handover-simple-ue-measurements.dat", std::ofstream::out);
   m_ueMeasurements << "# time   imsi   cellId   isServingCell?  RSRP(dBm)	 RSRQ(dB)" << std::endl;
-  m_packetSinkRx.open ("tmp/lena-handover-simple-tcp-receive.dat", std::ofstream::out);
+  m_packetSinkRx.open ("tmp/lena-handover-simple-packet-receive.dat", std::ofstream::out);
   m_packetSinkRx << "# time   bytesRx" << std::endl;
   m_positionTrace.open ("tmp/lena-handover-simple-position.dat", std::ofstream::out);
   m_positionTrace << "# time    x		y" << std::endl; 
@@ -622,6 +620,8 @@ LenaHandoverSimple::ConfigureCallbacks () {
           MakeCallback (&LenaHandoverSimple::RadioLinkFailure, this));
   Config::ConnectWithoutContext ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/RxWithAddresses",
           MakeCallback (&LenaHandoverSimple::NotifyPacketSinkRx, this));
+  Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/$ns3::LteEnbNetDevice/ComponentCarrierMap/*/FfMacScheduler/$ns3::RrFfMacScheduler/WidebandDlCqiReport",
+	  MakeCallback (&LenaHandoverSimple::NotifyCqiReport, this));
 
   //Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionEstablished",
   //        MakeCallback (&LenaHandoverSimple::NotifyConnectionEstablishedEnb, this));
@@ -636,8 +636,7 @@ LenaHandoverSimple::ConfigureCallbacks () {
   //Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/LteUeRrc/PhySyncDetection",
   //        MakeCallback (&LenaHandoverSimple::PhySyncDetection, this));
 
-  // Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/$ns3::LteEnbNetDevice/ComponentCarrierMap/*/FfMacScheduler/$ns3::RrFfMacScheduler/WidebandCqiReport", MakeCallback (&LenaHandoverSimple::NotifyCqiReport, this));
-	
+  	
   // Config::ConnectWithoutContext ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/Rx",
   //         MakeCallback (&LenaHandoverSimple::NotifyPacketSinkRx, this));  	
 
