@@ -91,9 +91,9 @@ main (int argc, char *argv[])
   uint16_t t310 = 50;                           // [ms] standards limit to {0, 50, 100, 200, 500, 1000, 2000}; default to small value of 50 ms but ns-3 defaults to 1000 ms; time after which radio problem detection and no radio recovery to indicate RLF
   uint16_t n310 = 1;                            // standards limit to {1, 2, 3, 4, 6, 8, 10, 20}; default to one out-of-sync indication but ns-3 defaults to 6; N310 out-of-sync indications leads to radio problem detection at UE
   uint16_t n311 = 1;                            // standards limit to {1, 2, 3, 4, 6, 8, 10}; default to one in-sync indication but ns-3 defaults to 2; N311 in-sync indications leads to radio recovery at UE
-  std::string sinrFromPdcchOnly = "true";       // string for inputting sinrFromPdcchOnly, "true" implies only PDCCH is used as in practice
-  std::string useRealRrc = "true";              // string for inputting useRealRrc, "true" implies only real RRC based on ASN encoding/decoding is used
-
+  bool useIdealRrc = false;                     // use IDEAL RRC based on function calls instead of REAL RRC where RRC messages are passed as ASN encoded packets
+  bool usePdschForSinr = false;                 // use PDSCH along with PDCCH for SINR calculation; by default, only PDCCH is used for SINR calculation but ns-3 defaults to using both
+  
   // Constants specific to RLF detection; 3GPP 36.133
   uint16_t numQoutEvalSf = 20;                  // [ms] number of subframes of 1 ms each; set to small value for quick detection; numQoutEvalSf is defined as TEval_Qout in #36.133
   uint16_t numQinEvalSf = 10;                   // [ms] number of subframes of 1 ms each; set to small value for quick detection; numQinEvalSf is defined as TEval_Qin in #36.133
@@ -109,7 +109,7 @@ main (int argc, char *argv[])
   // Specific to simulation
   cmd.AddValue ("simTime", "Total duration of the simulation (in seconds)", simTime);
   cmd.AddValue ("speed", "Speed of the UE (default = 20 m/s)", UEspeed);
-  cmd.AddValue ("txPower", "TX power used by HeNBs (default = 43.0 dBm); unused currently", enbTxPowerDbm); // Unused currently
+  cmd.AddValue ("txPower", "TX power used by HeNBs (default = 43.0 dBm)", enbTxPowerDbm); 
   cmd.AddValue ("neNBs", "Number of eNBs (default = 2)", num_eNB);
   cmd.AddValue ("nBearers", "Number of EPS bearers per UE (default = 0)", num_Bearers);
   cmd.AddValue ("inter_eNB_dist", "Distance between eNBs (default = 500.0 m)", inter_eNB_dist);
@@ -132,20 +132,20 @@ main (int argc, char *argv[])
   cmd.AddValue ("n311", "Number of in-sync notifications for radio recovery at UE (default = 1); standard (#36.331) limits to {1, 2, 3, 4, 5, 6, 8, 10} but ns-3 defaults to 2", n311);  
 
   // NS-3 specific parameters
-  cmd.AddValue ("sinrFromPdcchOnly", "Use PDCCH only for SINR calculation at UE (default = true); if false, both PDSCH and PDCCH are used (ns-3 default) but only PDCCH used in practice", sinrFromPdcchOnly);
-  cmd.AddValue ("useRealRrc", "Use real RRC protocol based on ASN encoding/decoding (default = true); if false, ideal RRC protocol is used (ns-3 default)", useRealRrc);  
+  cmd.AddValue ("usePdschForSinr", "Use PDSCH along with PDCCH for SINR calculation; by default, only PDCCH is used for SINR calculation but ns-3 defaults to using both", usePdschForSinr);
+  cmd.AddValue ("useIdealRrc", "Use IDEAL RRC based on function calls instead of REAL RRC where RRC messages are passed as ASN encoded packets; ns-3 defaults to ", useIdealRrc);  
 
   cmd.Parse (argc, argv);
 
-  // Simulation parameters:     num_UE  num_eNB  num_Bearers  inter_eNB_dist  y_for_UE  UESpeed     eNBTXPower  simTime 
-  LenaHandoverSimple simpleTest(num_UE, num_eNB, num_Bearers, inter_eNB_dist, y_for_UE, UEspeed, enbTxPowerDbm, simTime,
-  // RLF parameters:            qOut  qIn  numQoutEvalSf  numQinEvalSf  t310  n310  n311  useRealRrc  sinrFromPdcchOnly
-                                qOut, qIn, numQoutEvalSf, numQinEvalSf, t310, n310, n311, useRealRrc, sinrFromPdcchOnly,
+  // Simulation parameters:      num_UE  num_eNB  num_Bearers  inter_eNB_dist  y_for_UE  UESpeed     eNBTXPower  simTime 
+  LenaHandoverSimple simpleTest (num_UE, num_eNB, num_Bearers, inter_eNB_dist, y_for_UE, UEspeed, enbTxPowerDbm, simTime,
+  // RLF parameters:            qOut  qIn  numQoutEvalSf  numQinEvalSf  t310  n310  n311  useIdealRrc  usePdschForSinr
+                                qOut, qIn, numQoutEvalSf, numQinEvalSf, t310, n310, n311, useIdealRrc, usePdschForSinr,
   // HO optimization parameters:hoAlgo  hysteresis  timeToTrigger
                                 hoAlgo, hysteresis, timeToTrigger);
   
   // Run the object to get the logs as the measurements.
-  simpleTest.Run();
+  simpleTest.Run ();
 
   return 0;
 
