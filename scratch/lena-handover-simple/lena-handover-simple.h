@@ -39,7 +39,7 @@
 
 using namespace ns3;
 
-class LenaHandoverSimple{
+class LenaHandoverSimple {
 
 private: 
 
@@ -56,13 +56,12 @@ private:
   uint32_t ContextToNodeId (std::string context);
 
   // Constant variables for simulation
-  const uint16_t m_numberOfUes;
-  const uint16_t m_numberOfEnbs;
-  const uint16_t m_numBearersPerUe;
+  const uint16_t m_numberOfUes;		// number
+  const uint16_t m_numberOfEnbs;	// number
+  const uint16_t m_numBearersPerUe;	// number
   const double m_distance; 		// m
   const double m_yForUe;   		// m
   const double m_speed;    		// m/s
-  const double m_enbTxPowerDbm; 	// dB
   const double m_simTime;  		// s  
 
   // Specifics for RLFs
@@ -71,19 +70,19 @@ private:
   const double m_numQoutEvalSf;		// 1 subframe = 1ms
   const double m_numQinEvalSf;		// 1 subframe = 1ms
   const uint16_t m_t310;		// ms
-  const uint16_t m_n310;
-  const uint16_t m_n311;
-  const bool m_useIdealRrc;
-  const bool m_usePdsch;
+  const uint16_t m_n310;		// number of out-of-sync indications for RLF
+  const uint16_t m_n311;		// number of in-sync indications for getting in-sync
+  const bool m_useIdealRrc;		// bool to use IDEAL RRC
+  const bool m_usePdschForSinr;		// bool to use PDSCH for SINR calculation
 
   // Variables for RLF indication tracking
-  uint16_t m_counterN310FirsteNB;
-  Time m_t310StartTimeFirstEnb;
+  uint16_t m_counterN310FirsteNB;	// out-of-sync counter for first eNB
+  Time m_t310StartTimeFirstEnb;		// t310 start time for first eNB
 
   // Specifics for HO algo
-  const std::string m_hoAlgo;
-  const double m_hyst;
-  const uint16_t m_ttt;
+  const std::string m_hoAlgo;		// possible values: 'A3Rsrp', 'A2A4Rsrq', 'NoOp'; default to 'A3Rsrp'
+  const double m_hyst;			// [dB] standards limit to 0:0.5:15 dB; default to 3 dB
+  const uint16_t m_ttt;			// [ms] standards limit to {0, 40, 64, 80, 100, 128, 160, 256, 320, 480, 512, 640, 1024, 1280}; default to 256 ms
 
   // LTE specific objects
   Ptr<LteHelper> m_lteHelper;
@@ -128,7 +127,7 @@ private:
   void NotifyRandomAccessErrorUe (uint64_t imsi, uint16_t cellId, uint16_t rnti);
   void NotifyConnectionTimeoutUe (uint64_t imsi, uint16_t cellId, uint16_t rnti, uint8_t connEstFailCount);
   void NotifyRaResponseTimeoutUe (uint64_t imsi, bool contention, uint8_t preambleTxCounter, uint8_t maxPreambleTxLimit);
-  void NotifyPacketSinkRx (std::string context, Ptr<const Packet> packet, const Address &address, const Address &receiver);
+  void NotifyPacketSinkRx (Ptr<const Packet> packet, const Address &address, const Address &receiver);
   void NotifyCqiReport (std::string context, uint16_t rnti, uint8_t cqi);  
   void CongStateTrace (const TcpSocketState::TcpCongState_t oldValue, const TcpSocketState::TcpCongState_t newValue);
 
@@ -139,20 +138,18 @@ private:
   void ConnectTcpTrace (void);
 
   // Functions for configuration
-  void ConfigureSettings();
-  void ConfigureCallbacks();
-  void ConfigureLogging();
-  void OpenCustomLogs();
-  void CloseFileDescriptors();
-  bool SetRrc(std::string useRealRrc = "true");
-  bool SetSINRCalc(std::string sinrFromPdcchOnly = "true");
+  void ConfigureSettings ();
+  void ConfigureCallbacks ();
+  void ConfigureLogging ();
+  void OpenCustomLogs ();
+  void CloseFileDescriptors ();
 
   // Functions for setting up the node based network
-  void SetupLTE();
-  void SetChannelModel();  
-  void SetMobility();
-  void SetupInternet();
-  void InstallUDP(uint16_t dlPort = 10000, uint16_t ulPort = 20000);
+  void SetupLTE ();
+  void SetChannelModel ();  
+  void SetMobility ();
+  void SetupInternet ();
+  void InstallUDP (uint16_t dlPort = 10000, uint16_t ulPort = 20000);
   
   // Streams for outputting stuff from callbacks
   std::ofstream m_ueMeasurements;
@@ -163,38 +160,38 @@ private:
 
 public:
 
-  LenaHandoverSimple(uint16_t numUes, uint16_t numEnbs, uint16_t numBearers, double dist, double y, double speed, double TxPower, double simTime = 0.0, double qOut = -5, double qIn = -3.8, uint16_t numQoutEvalSf = 20, uint16_t numQinEvalSf = 10, uint16_t t310 = 50, uint16_t n310 = 1, uint16_t n311 = 1, std::string useRealRrc = "true", std::string sinrFromPdcchOnly = "true", std::string hoAlgo = "A3Rsrp", double hysteresis = 3, uint16_t timeToTrigger = 256):
+  LenaHandoverSimple (uint16_t numUes, uint16_t numEnbs, uint16_t numBearers, double dist, double y, double speed, double simTime = 0.0, double qOut = -5, double qIn = -3.8, uint16_t numQoutEvalSf = 20, uint16_t numQinEvalSf = 10, uint16_t t310 = 50, uint16_t n310 = 1, uint16_t n311 = 1, bool useIdealRrc = false, bool usePdschForSinr = false, std::string hoAlgo = "A3Rsrp", double hysteresis = 3, uint16_t timeToTrigger = 256):
 	
 	// Simulation specific parameters
-        m_numberOfUes(numUes), m_numberOfEnbs(numEnbs), m_numBearersPerUe(numBearers), m_distance(dist), m_yForUe(y), m_speed(speed), m_enbTxPowerDbm(TxPower), 
+        m_numberOfUes (numUes), m_numberOfEnbs (numEnbs), m_numBearersPerUe (numBearers), m_distance (dist), m_yForUe (y), m_speed (speed), 
 
 	// Set simTime if defined, else calculate based on the speed.
-        m_simTime((simTime != 0.0) ? simTime : (double)(numEnbs + 1) * dist / speed),
+        m_simTime ((simTime != 0.0) ? simTime : (double)(numEnbs + 1) * dist / speed),
 
 	// RLF specific parameters
-	m_qOut(qOut), m_qIn(qIn), m_numQoutEvalSf(numQoutEvalSf), m_numQinEvalSf(numQinEvalSf), m_t310(t310), m_n310(n310), m_n311(n311), m_useIdealRrc(SetRrc(useRealRrc)), m_usePdsch(SetSINRCalc(sinrFromPdcchOnly)),
+	m_qOut (qOut), m_qIn (qIn), m_numQoutEvalSf (numQoutEvalSf), m_numQinEvalSf (numQinEvalSf), m_t310 (t310), m_n310 (n310), m_n311 (n311), m_useIdealRrc (useIdealRrc), m_usePdschForSinr (usePdschForSinr),
 
 	// RLF specific variables
-	m_counterN310FirsteNB(0), m_t310StartTimeFirstEnb (Seconds(0)),
+	m_counterN310FirsteNB (0), m_t310StartTimeFirstEnb (Seconds (0)),
 
 	// HO algo specific parameters
-	m_hoAlgo(hoAlgo), m_hyst(hysteresis), m_ttt(timeToTrigger) {
+	m_hoAlgo (hoAlgo), m_hyst (hysteresis), m_ttt (timeToTrigger) {
 
 	// Perform the initial configuration settings.	
-	ConfigureSettings();
+	ConfigureSettings ();
 
 	// Setup LTE network, set channel models, set mobility models and start the internet.
-	SetupLTE();
-        SetChannelModel();
-	SetMobility();
-	SetupInternet();
+	SetupLTE ();
+        SetChannelModel ();
+	SetMobility ();
+	SetupInternet ();
 
 	// Add callbacks and enable logging.
-	ConfigureLogging();
-	ConfigureCallbacks();	
+	ConfigureLogging ();
+	ConfigureCallbacks ();	
 
   }
 
-  void Run();
+  void Run ();
 
 };
