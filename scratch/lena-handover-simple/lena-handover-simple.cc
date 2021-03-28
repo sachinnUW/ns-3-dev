@@ -514,14 +514,19 @@ LenaHandoverSimple::ConfigureLogging () {
   // m_lteHelper->EnableLogComponents();
 
   // Enable traces at all levels.
-  m_lteHelper->EnableRlcTraces ();
-  m_lteHelper->EnablePdcpTraces ();
+  m_lteHelper->EnableTraces ();
+
+  // Set stats collection duration.
   Ptr<RadioBearerStatsCalculator> rlcStats = m_lteHelper->GetRlcStats ();
   rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (1.0)));
   Ptr<RadioBearerStatsCalculator> pdcpStats = m_lteHelper->GetPdcpStats ();
   pdcpStats->SetAttribute ("EpochDuration", TimeValue (Seconds (1.0)));
-  m_lteHelper->EnableMacTraces ();
-  m_lteHelper->EnablePhyTraces ();
+
+  // Set filepaths to tmp directories.
+  rlcStats->SetDlOutputFilename ("tmp/DlRlcStats.txt");
+  rlcStats->SetUlOutputFilename ("tmp/UlRlcStats.txt");
+  pdcpStats->SetDlPdcpOutputFilename ("tmp/DlPdcpStats.txt");
+  pdcpStats->SetUlPdcpOutputFilename ("tmp/UlPdcpStats.txt");
 
   // Open logging files for additional experiment logging.
   OpenCustomLogs ();
@@ -560,6 +565,17 @@ LenaHandoverSimple::CloseFileDescriptors () {
 // Function to configure default attributes for different components of the NS-3 simulation.
 void
 LenaHandoverSimple::ConfigureSettings(){
+
+  // Set paths for PHY-MAC trace files.
+  Config::SetDefault ("ns3::PhyStatsCalculator::DlRsrpSinrFilename", StringValue ("tmp/DlRsrpSinrStats.txt"));
+  Config::SetDefault ("ns3::PhyStatsCalculator::UlSinrFilename", StringValue ("tmp/UlSinrStats.txt"));
+  Config::SetDefault ("ns3::PhyStatsCalculator::UlInterferenceFilename", StringValue ("tmp/UlInterferenceStats.txt"));  
+  Config::SetDefault ("ns3::PhyTxStatsCalculator::DlTxOutputFilename", StringValue ("tmp/DlTxPhyStats.txt"));
+  Config::SetDefault ("ns3::PhyTxStatsCalculator::UlTxOutputFilename", StringValue ("tmp/UlTxPhyStats.txt"));  
+  Config::SetDefault ("ns3::PhyRxStatsCalculator::DlRxOutputFilename", StringValue ("tmp/DlRxPhyStats.txt"));
+  Config::SetDefault ("ns3::PhyRxStatsCalculator::UlRxOutputFilename", StringValue ("tmp/UlRxPhyStats.txt"));
+  Config::SetDefault ("ns3::MacStatsCalculator::DlOutputFilename", StringValue ("tmp/DlMacStats.txt"));
+  Config::SetDefault ("ns3::MacStatsCalculator::UlOutputFilename", StringValue ("tmp/UlMacStats.txt"));
 
   // Set reasonable default attributes. Reduce number of packets to increase speed.
   Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds (10)));
