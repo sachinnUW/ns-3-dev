@@ -128,7 +128,7 @@ private:
   void NotifyConnectionTimeoutUe (uint64_t imsi, uint16_t cellId, uint16_t rnti, uint8_t connEstFailCount);
   void NotifyRaResponseTimeoutUe (uint64_t imsi, bool contention, uint8_t preambleTxCounter, uint8_t maxPreambleTxLimit);
   void NotifyPacketSinkRx (Ptr<const Packet> packet, const Address &address, const Address &receiver);
-  void NotifyCqiReport (std::string context, uint16_t rnti, uint8_t cqi);  
+  void NotifyCqiReport (uint16_t rnti, uint8_t cqi);  
   void CongStateTrace (const TcpSocketState::TcpCongState_t oldValue, const TcpSocketState::TcpCongState_t newValue);
 
   // Custom callback that schedules itself periodically.
