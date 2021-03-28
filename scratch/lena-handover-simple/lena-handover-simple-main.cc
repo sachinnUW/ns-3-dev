@@ -76,7 +76,6 @@ main (int argc, char *argv[])
   // Default values for parameters from command line
   double simTime = 0.0;                         // [s] calculated based on speed when set to 0.0
   double UEspeed = 20.0;                        // [m/s]
-  double enbTxPowerDbm = 43.0;                  // [dBm]
   int num_eNB = 2;                              // number of equally spaced base stations
   int num_Bearers = 0;                          // number of EPS bearers
   float inter_eNB_dist = 500.0;                 // [m]
@@ -109,7 +108,6 @@ main (int argc, char *argv[])
   // Specific to simulation
   cmd.AddValue ("simTime", "Total duration of the simulation (in seconds)", simTime);
   cmd.AddValue ("speed", "Speed of the UE (default = 20 m/s)", UEspeed);
-  cmd.AddValue ("txPower", "TX power used by HeNBs (default = 43.0 dBm)", enbTxPowerDbm); 
   cmd.AddValue ("neNBs", "Number of eNBs (default = 2)", num_eNB);
   cmd.AddValue ("nBearers", "Number of EPS bearers per UE (default = 0)", num_Bearers);
   cmd.AddValue ("inter_eNB_dist", "Distance between eNBs (default = 500.0 m)", inter_eNB_dist);
@@ -137,12 +135,12 @@ main (int argc, char *argv[])
 
   cmd.Parse (argc, argv);
 
-  // Simulation parameters:      num_UE  num_eNB  num_Bearers  inter_eNB_dist  y_for_UE  UESpeed     eNBTXPower  simTime 
-  LenaHandoverSimple simpleTest (num_UE, num_eNB, num_Bearers, inter_eNB_dist, y_for_UE, UEspeed, enbTxPowerDbm, simTime,
-  // RLF parameters:            qOut  qIn  numQoutEvalSf  numQinEvalSf  t310  n310  n311  useIdealRrc  usePdschForSinr
-                                qOut, qIn, numQoutEvalSf, numQinEvalSf, t310, n310, n311, useIdealRrc, usePdschForSinr,
-  // HO optimization parameters:hoAlgo  hysteresis  timeToTrigger
-                                hoAlgo, hysteresis, timeToTrigger);
+  // Simulation parameters:      num_UE  num_eNB  num_Bearers  inter_eNB_dist  y_for_UE  UESpeed  simTime 
+  LenaHandoverSimple simpleTest (num_UE, num_eNB, num_Bearers, inter_eNB_dist, y_for_UE, UEspeed, simTime,
+  // RLF parameters:             qOut  qIn  numQoutEvalSf  numQinEvalSf  t310  n310  n311  useIdealRrc  usePdschForSinr
+                                 qOut, qIn, numQoutEvalSf, numQinEvalSf, t310, n310, n311, useIdealRrc, usePdschForSinr,
+  // HO optimization parameters: hoAlgo  hysteresis  timeToTrigger
+                                 hoAlgo, hysteresis, timeToTrigger);
   
   // Run the object to get the logs as the measurements.
   simpleTest.Run ();
