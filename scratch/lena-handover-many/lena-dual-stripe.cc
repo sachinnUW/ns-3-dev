@@ -42,6 +42,115 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("LenaDualStripe");
 
+/**
+ * \param context, IMSI, cellId, RNTI, targetCellId reported from 'LteUeRrc/HandoverStart' event
+ * Callback to display handover start message reception at UE with time
+*/
+void
+NotifyHandoverStartUe (std::string context,
+                       uint64_t IMSI,
+                       uint16_t cellId,
+                       uint16_t RNTI,
+                       uint16_t targetCellId)
+{
+
+  std::cout << "UE_HO_START: IMSI-" << IMSI << " "
+            << "SCellId-" << cellId << " "
+            << "TCellId-" << targetCellId << " "
+            << "RNTI-" << RNTI << " "
+            << "Time-" << Simulator::Now ().GetSeconds ()            
+            << std::endl;
+
+}
+
+/**
+ * \param context, IMSI, cellId, RNTI reported from 'LteUeRrc/HandoverEndOk' event
+ * Callback to display successful handover end message reception at UE with time
+*/
+void
+NotifyHandoverEndOkUe (std::string context,
+                       uint64_t IMSI,
+                       uint16_t cellId,
+                       uint16_t RNTI)
+{
+
+   std::cout << "UE_HO_END: IMSI-" << IMSI << " "
+            << "TCellId-" << cellId << " "
+            << "RNTI-" << RNTI << " "
+            << "Time-" << Simulator::Now ().GetSeconds ()            
+            << std::endl;
+
+}
+
+/**
+ * \param context, IMSI, cellId, RNTI reported from 'LteUeRrc/HandoverErrorOk' event
+ * Callback to display successful handover end message reception at UE with time
+*/
+void
+NotifyHandoverEndErrorUe (std::string context,
+                          uint64_t IMSI,
+                          uint16_t cellId,
+                          uint16_t RNTI)
+{
+
+   std::cout << "UE_HO_ERROR: IMSI-" << IMSI << " "
+            << "TCellId-" << cellId << " "
+            << "RNTI-" << RNTI << " "
+            << "Time-" << Simulator::Now ().GetSeconds ()            
+            << std::endl;
+
+}
+
+/**
+ * \param context, IMSI, cellId, RNTI reported from 'LteUeRrc/RadioLinkFailure' event
+ * Callback to display RLF detection with time and position at UE
+*/
+void 
+RadioLinkFailure (std::string context,
+	          uint64_t IMSI,
+	  	  uint16_t cellId,
+   		  uint16_t RNTI)
+{
+
+  std::cout << "UE_RLF_DETECTED: ";
+  std::cout << "RNTI-" << RNTI << " "
+            << "CellId-" << cellId << " " 
+            << "Time-" << Simulator::Now ().GetSeconds ()
+            << std::endl;     
+
+}
+
+/**
+ * \param context, IMSI, cellId, RNTI reported from 'LteUeRrc/ConnectionEstablished' event
+ * Callback to display connection establishment of UE with time
+*/
+void
+NotifyConnectionEstablishedUe (std::string context,
+                               uint64_t IMSI,
+                               uint16_t cellId,
+                               uint16_t RNTI)
+{
+
+  std::cout << "UE_EST_CONNECTION: IMSI-" << IMSI << " "
+            << "CellId-" << cellId << " "
+            << "RNTI-" << RNTI << " "
+            << "Time-" << Simulator::Now ().GetSeconds ()
+            << std::endl;
+
+}
+
+// Function to connect callbacks for HO and RLF at the UE side
+void ConnectHOandRLFCallbacksatUe ()
+{
+
+  Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/ConnectionEstablished", MakeCallback (&NotifyConnectionEstablishedUe));
+  Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverStart", MakeCallback (&NotifyHandoverStartUe));
+  Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverEndOk", MakeCallback (&NotifyHandoverEndOkUe));
+  Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverEndError", MakeCallback (&NotifyHandoverEndErrorUe));
+  Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/RadioLinkFailure", MakeCallback (&RadioLinkFailure));
+
+}
+
 bool AreOverlapping (Box a, Box b)
 {
   return !((a.xMin > b.xMax) || (b.xMin > a.xMax) || (a.yMin > b.yMax) || (b.yMin > a.yMax));
@@ -517,6 +626,7 @@ main (int argc, char *argv[])
   lteHelper->SetPathlossModelAttribute ("Los2NlosThr", DoubleValue (1e6));
   lteHelper->SetSpectrumChannelType ("ns3::MultiModelSpectrumChannel");
 
+
 //   lteHelper->EnableLogComponents ();
 //   LogComponentEnable ("PfFfMacScheduler", LOG_LEVEL_ALL);
 
@@ -851,7 +961,7 @@ main (int argc, char *argv[])
       PrintGnuplottableUeListToFile ("ues.txt");
 
       remHelper = CreateObject<RadioEnvironmentMapHelper> ();
-      remHelper->SetAttribute ("Channel", PointerValue (lteHelper->GetDownlinkSpectrumChannel ()));
+      remHelper->SetAttribute ("ChannelPath", StringValue ("/ChannelList/0"));
       remHelper->SetAttribute ("OutputFile", StringValue ("lena-dual-stripe.rem"));
       remHelper->SetAttribute ("XMin", DoubleValue (macroUeBox.xMin));
       remHelper->SetAttribute ("XMax", DoubleValue (macroUeBox.xMax));
@@ -879,6 +989,8 @@ main (int argc, char *argv[])
     {
       lteHelper->EnablePdcpTraces ();
     }
+
+  ConnectHOandRLFCallbacksatUe ();
 
   Simulator::Run ();
 

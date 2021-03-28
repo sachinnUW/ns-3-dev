@@ -4,3 +4,4 @@
 !subdir/
 !scratch-simulator.cc
 !lena-handover-simple/
+!lena-handover-many/
