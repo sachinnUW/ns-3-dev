@@ -1114,10 +1114,14 @@ main (int argc, char *argv[])
 
   g_packetSinkRx.open ("results/packet-receive_" + std::to_string(hysteresis) + "_" + std::to_string(timeToTrigger) + "_" + std::to_string(useUdp) + "_.dat", std::ofstream::out);
   g_packetSinkRx << "# time   bytesRx            source                        receiver" << std::endl;
-  Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/RxWithAddresses", MakeCallback (&NotifyPacketSinkRx));
+
+  if(!generateRem)
+    Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/RxWithAddresses", MakeCallback (&NotifyPacketSinkRx));
 
   ConfigureRLFParameters ();
   ConnectHOandRLFCallbacksatUe ();
+
+
 
   Simulator::Run ();
 
