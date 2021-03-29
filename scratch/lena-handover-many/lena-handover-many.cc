@@ -1076,7 +1076,7 @@ main (int argc, char *argv[])
 
       remHelper = CreateObject<RadioEnvironmentMapHelper> ();
       remHelper->SetAttribute ("ChannelPath", StringValue ("/ChannelList/0"));
-      remHelper->SetAttribute ("OutputFile", StringValue ("lena-dual-stripe.rem"));
+      remHelper->SetAttribute ("OutputFile", StringValue ("lena-handover-many.rem"));
       remHelper->SetAttribute ("XMin", DoubleValue (macroUeBox.xMin));
       remHelper->SetAttribute ("XMax", DoubleValue (macroUeBox.xMax));
       remHelper->SetAttribute ("YMin", DoubleValue (macroUeBox.yMin));
