@@ -139,11 +139,30 @@ NotifyConnectionEstablishedUe (std::string context,
 
 }
 
+// Function to configure RLF parameters at UE side
+void ConfigureRLFParameters ()
+{
+  
+  // Set to real RRC.
+  Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (false));
+
+  // Set to false to use PDCCH for SINR calculation to include interference from all eNBs.
+  Config::SetDefault ("ns3::LteHelper::UsePdschForCqiGeneration", BooleanValue (false));  
+
+  // RLF parameters set to toy values.
+  Config::SetDefault ("ns3::LteUePhy::NumQoutEvalSf", UintegerValue(20)); 	
+  Config::SetDefault ("ns3::LteUePhy::NumQinEvalSf", UintegerValue(20));
+  Config::SetDefault ("ns3::LteUeRrc::T310", TimeValue(MilliSeconds(50)));
+  Config::SetDefault ("ns3::LteUeRrc::N310", UintegerValue(1));
+  Config::SetDefault ("ns3::LteUeRrc::N311", UintegerValue(1));
+  
+}
+
 // Function to connect callbacks for HO and RLF at the UE side
 void ConnectHOandRLFCallbacksatUe ()
 {
 
-  Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/ConnectionEstablished", MakeCallback (&NotifyConnectionEstablishedUe));
+  //Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/ConnectionEstablished", MakeCallback (&NotifyConnectionEstablishedUe));
   Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverStart", MakeCallback (&NotifyHandoverStartUe));
   Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverEndOk", MakeCallback (&NotifyHandoverEndOkUe));
   Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverEndError", MakeCallback (&NotifyHandoverEndErrorUe));
@@ -351,7 +370,7 @@ PrintGnuplottableEnbListToFile (std::string filename)
 
 static ns3::GlobalValue g_nBlocks ("nBlocks",
                                    "Number of femtocell blocks",
-                                   ns3::UintegerValue (1),
+                                   ns3::UintegerValue (0),
                                    ns3::MakeUintegerChecker<uint32_t> ());
 static ns3::GlobalValue g_nApartmentsX ("nApartmentsX",
                                         "Number of apartments along the X axis in a femtocell block",
@@ -363,11 +382,11 @@ static ns3::GlobalValue g_nFloors ("nFloors",
                                    ns3::MakeUintegerChecker<uint32_t> ());
 static ns3::GlobalValue g_nMacroEnbSites ("nMacroEnbSites",
                                           "How many macro sites there are",
-                                          ns3::UintegerValue (3),
+                                          ns3::UintegerValue (7),
                                           ns3::MakeUintegerChecker<uint32_t> ());
 static ns3::GlobalValue g_nMacroEnbSitesX ("nMacroEnbSitesX",
                                            "(minimum) number of sites along the X-axis of the hex grid",
-                                           ns3::UintegerValue (1),
+                                           ns3::UintegerValue (2),
                                            ns3::MakeUintegerChecker<uint32_t> ());
 static ns3::GlobalValue g_interSiteDistance ("interSiteDistance",
                                              "min distance between two nearby macro cell sites",
@@ -461,7 +480,7 @@ static ns3::GlobalValue g_useUdp ("useUdp",
 static ns3::GlobalValue g_fadingTrace ("fadingTrace",
                                        "The path of the fading trace (by default no fading trace "
                                        "is loaded, i.e., fading is not considered)",
-                                       ns3::StringValue (""),
+                                       ns3::StringValue ("src/lte/model/fading-traces/fading_trace_EVA_60kmph.fad"),
                                        ns3::MakeStringChecker ());
 static ns3::GlobalValue g_numBearersPerUe ("numBearersPerUe",
                                            "How many bearers per UE there are in the simulation",
@@ -474,11 +493,11 @@ static ns3::GlobalValue g_srsPeriodicity ("srsPeriodicity",
                                           ns3::MakeUintegerChecker<uint16_t> ());
 static ns3::GlobalValue g_outdoorUeMinSpeed ("outdoorUeMinSpeed",
                                              "Minimum speed value of macro UE with random waypoint model [m/s].",
-                                             ns3::DoubleValue (0.0),
+                                             ns3::DoubleValue (16.6667),
                                              ns3::MakeDoubleChecker<double> ());
 static ns3::GlobalValue g_outdoorUeMaxSpeed ("outdoorUeMaxSpeed",
                                              "Maximum speed value of macro UE with random waypoint model [m/s].",
-                                             ns3::DoubleValue (0.0),
+                                             ns3::DoubleValue (16.6667),
                                              ns3::MakeDoubleChecker<double> ());
 
 int
@@ -491,10 +510,22 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::UdpClient::MaxPackets", UintegerValue (1000000));
   Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (10 * 1024));
 
+  // Parameters for A3 HO algo optimization; 3GPP 36.331
+  double hysteresis = 3;                        // [dB] standards limit to 0:0.5:15 dB; default to 3 dB; parameter related to RSRP variation after entering A3 condition and before triggering HO
+  uint16_t timeToTrigger = 256;                 // [ms] standards limit to {0, 40, 64, 80, 100, 128, 160, 256, 320, 480, 512, 640, 1024, 1280}; default to 256 ms; time for which the A3 entering condition must be met to trigger HO
+  double a3Offset = 0;                          // [dB] standards limit to: -15 dB:0:15 dB; default to 0 dB inside setHOAlgoVars; parameter for RSRP difference to trigger HO in the case of A3 algorithm
+
+
   CommandLine cmd (__FILE__);
   cmd.Parse (argc, argv);
   ConfigStore inputConfig;
   inputConfig.ConfigureDefaults ();
+
+  // Parameters for HO algorithm; 3GPP 36.331
+  cmd.AddValue ("hysteresis", "Hysteresis value (default = 3 dB); standard (#36.331) limits to {0, 0.5, ... 15}", hysteresis);
+  cmd.AddValue ("timeToTrigger", "Time to trigger (TTT) (default = 256 ms); standard (#36.331) limits to {0, 40, 64, 80, 100, 128, 160, 256, 320, 480, 512, 640, 1024, 1280}", timeToTrigger);
+  cmd.AddValue ("a3Offset", "Offset value for A3 HO algorithm (Warning: custom parameter that may result in errors); standard (#36.331) limits to {-15, -14.5, ... -0.5, 0, 0.5, ... 14.5, 15}", a3Offset);
+
   // parse again so you can override input file default values via command line
   cmd.Parse (argc, argv); 
 
@@ -626,6 +657,11 @@ main (int argc, char *argv[])
   lteHelper->SetPathlossModelAttribute ("Los2NlosThr", DoubleValue (1e6));
   lteHelper->SetSpectrumChannelType ("ns3::MultiModelSpectrumChannel");
 
+  // set the HO algorithm parameters
+  lteHelper->SetHandoverAlgorithmType ("ns3::A3RsrpHandoverAlgorithm");
+  lteHelper->SetHandoverAlgorithmAttribute ("Hysteresis", DoubleValue (hysteresis));
+  lteHelper->SetHandoverAlgorithmAttribute ("TimeToTrigger", TimeValue (MilliSeconds (timeToTrigger)));
+  lteHelper->SetHandoverAlgorithmAttribute ("a3Offset", DoubleValue (a3Offset));
 
 //   lteHelper->EnableLogComponents ();
 //   LogComponentEnable ("PfFfMacScheduler", LOG_LEVEL_ALL);
@@ -990,6 +1026,7 @@ main (int argc, char *argv[])
       lteHelper->EnablePdcpTraces ();
     }
 
+  ConfigureRLFParameters ();
   ConnectHOandRLFCallbacksatUe ();
 
   Simulator::Run ();

@@ -66,6 +66,13 @@ A3RsrpHandoverAlgorithm::GetTypeId ()
                    TimeValue (MilliSeconds (256)), // 3GPP time-to-trigger median value as per Section 6.3.5 of 3GPP TS 36.331
                    MakeTimeAccessor (&A3RsrpHandoverAlgorithm::m_timeToTrigger),
                    MakeTimeChecker ())
+    .AddAttribute ("a3Offset",
+                   "Value by which the neighboring cell's RSRP "
+                   "must exceed after Hysteresis has been subtracted "
+                   "in order to trigger a handover",
+                   DoubleValue (0), // 3GPP A3 offset value as per Section 6.3.5 of 3GPP TS 36.331
+                   MakeDoubleAccessor (&A3RsrpHandoverAlgorithm::m_a3OffsetDb),
+                   MakeDoubleChecker<double> ())
   ;
   return tid;
 }
@@ -99,7 +106,7 @@ A3RsrpHandoverAlgorithm::DoInitialize ()
 
   LteRrcSap::ReportConfigEutra reportConfig;
   reportConfig.eventId = LteRrcSap::ReportConfigEutra::EVENT_A3;
-  reportConfig.a3Offset = 0;
+  reportConfig.a3Offset = m_a3OffsetDb;
   reportConfig.hysteresis = hysteresisIeValue;
   reportConfig.timeToTrigger = m_timeToTrigger.GetMilliSeconds ();
   reportConfig.reportOnLeave = false;
