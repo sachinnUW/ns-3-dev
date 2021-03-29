@@ -457,7 +457,7 @@ static ns3::GlobalValue g_epc ("epc",
                                "with real IP applications over PDCP and RLC UM (or RLC AM by changing "
                                "the default value of EpsBearerToRlcMapping e.g. to RLC_AM_ALWAYS). "
                                "If false, only the LTE radio access will be simulated with RLC SM. ",
-                               ns3::BooleanValue (false),
+                               ns3::BooleanValue (true),
                                ns3::MakeBooleanChecker ());
 static ns3::GlobalValue g_epcDl ("epcDl",
                                  "if true, will activate data flows in the downlink when EPC is being used. "
