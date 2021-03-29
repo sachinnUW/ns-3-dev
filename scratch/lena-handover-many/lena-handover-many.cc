@@ -42,6 +42,10 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("LenaDualStripe");
 
+std::ofstream g_packetSinkRx;
+std::ofstream g_tcpCongStateTrace;
+std::ofstream g_tcpCwndChangeTrace;
+
 /**
  * \param context, IMSI, cellId, RNTI, targetCellId reported from 'LteUeRrc/HandoverStart' event
  * Callback to display handover start message reception at UE with time
@@ -60,6 +64,17 @@ NotifyHandoverStartUe (std::string context,
             << "RNTI-" << RNTI << " "
             << "Time-" << Simulator::Now ().GetSeconds ()            
             << std::endl;
+
+}
+
+/*
+ * \param context string to be parsed
+ * Parse context strings of the form "$ns3::TcpL4Protocol/SocketList/[i]/CongState" to extract the SocketId.
+*/
+uint32_t
+ContextToSocketId (std::string context) {
+
+  return atoi (context.substr (context.find ("/SocketList/") + 12, context.find ("/CongState") - 10).c_str ());
 
 }
 
@@ -136,6 +151,41 @@ NotifyConnectionEstablishedUe (std::string context,
             << "RNTI-" << RNTI << " "
             << "Time-" << Simulator::Now ().GetSeconds ()
             << std::endl;
+
+}
+
+/**
+ * \param context, oldValue, newValue reported from "$ns3::TcpL4Protocol/SocketList/[i]/CongState"
+ * Callback to display the old and new values of congestion state of the TCP
+*/
+void
+CongStateTrace (std::string context,
+		const TcpSocketState::TcpCongState_t oldValue,
+	        const TcpSocketState::TcpCongState_t newValue)
+{
+
+  g_tcpCongStateTrace << std::setw (7) << std::setprecision (3) << std::fixed << Simulator::Now ().GetSeconds () << " "
+		      << std::setw (4) << (ContextToSocketId(context) + 1) << " "
+    		      << std::setw (15) << TcpSocketState::TcpCongStateName[oldValue] << " "
+		      << std::setw (12) << TcpSocketState::TcpCongStateName[newValue] << std::endl;
+
+}
+
+/**
+ * \param context, packet, address, receiver reported from "$ns3::PacketSink/RxWithAddresses"
+ * Callback to output received packet at UE to a file
+*/
+void
+NotifyPacketSinkRx (std::string context,
+		    Ptr<const Packet> packet,
+		    const Address &address,
+                    const Address &receiver)
+{
+
+  g_packetSinkRx << std::setw (7) << std::setprecision (3) << std::fixed << Simulator::Now ().GetSeconds () << " "
+		 << std::setw (5) << packet->GetSize () 
+		 << std::setw (5) << " " << address 
+		 << std::setw (5) << " " << receiver << std::endl;
 
 }
 
@@ -1019,12 +1069,22 @@ main (int argc, char *argv[])
       Simulator::Stop (Seconds (simTime));
     }
 
-  lteHelper->EnableMacTraces ();
   lteHelper->EnableRlcTraces ();
-  if (epc)
-    {
-      lteHelper->EnablePdcpTraces ();
-    }
+  Ptr<RadioBearerStatsCalculator> rlcStats = lteHelper->GetRlcStats ();
+  rlcStats->SetDlOutputFilename ("results/DlRlcStats_HO_" + std::to_string(hysteresis) + "_" + std::to_string(timeToTrigger) + "_" + std::to_string(useUdp) + "_.txt");
+  rlcStats->SetUlOutputFilename ("results/UlRlcStats_HO_" + std::to_string(hysteresis) + "_" + std::to_string(timeToTrigger) + "_" + std::to_string(useUdp) + "_.txt");
+  
+  if(!useUdp) {
+  
+    g_tcpCongStateTrace.open ("results/cong-state_" + std::to_string(hysteresis) + "_" + std::to_string(timeToTrigger) + "_" + std::to_string(useUdp) + "_.dat", std::ofstream::out);
+    g_tcpCongStateTrace << "# time   IMSI     OldState     NewState" << std::endl;
+    Config::Connect ("/NodeList/*/$ns3::TcpL4Protocol/SocketList/*/CongState", MakeCallback (&CongStateTrace)); 
+  
+  }
+
+  g_packetSinkRx.open ("results/packet-receive_" + std::to_string(hysteresis) + "_" + std::to_string(timeToTrigger) + "_" + std::to_string(useUdp) + "_.dat", std::ofstream::out);
+  g_packetSinkRx << "# time   bytesRx            source                        receiver" << std::endl;
+  Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/RxWithAddresses", MakeCallback (&NotifyPacketSinkRx));
 
   ConfigureRLFParameters ();
   ConnectHOandRLFCallbacksatUe ();
