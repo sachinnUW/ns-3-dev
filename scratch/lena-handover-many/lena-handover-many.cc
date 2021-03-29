@@ -172,6 +172,32 @@ CongStateTrace (std::string context,
 }
 
 /**
+ * \param context, oldCwnd, newCwnd reported from "$ns3::TcpL4Protocol/SocketList/[i]/CongestionWindow"
+ * Callback to display the old and new values of congestion window of the TCP
+*/
+void
+CongWindowTrace (std::string context,
+		 uint32_t oldCwnd,
+	         uint32_t newCwnd)
+{
+
+  g_tcpCwndChangeTrace << std::setw (7) << std::setprecision (3) << std::fixed << Simulator::Now ().GetSeconds () << " "
+		       << std::setw (4) << (ContextToSocketId(context) + 1) << " "
+    		       << std::setw (10) << oldCwnd << " "
+		       << std::setw (10) << newCwnd << std::endl;
+
+}
+
+// Function to connect callbacks for congestion state and congestion window late
+void ConnectCongestionTrace ()
+{
+
+  Config::Connect ("/NodeList/*/$ns3::TcpL4Protocol/SocketList/*/CongState", MakeCallback (&CongStateTrace));  
+  Config::Connect ("/NodeList/*/$ns3::TcpL4Protocol/SocketList/*/CongestionWindow", MakeCallback (&CongWindowTrace));
+
+}
+
+/**
  * \param context, packet, address, receiver reported from "$ns3::PacketSink/RxWithAddresses"
  * Callback to output received packet at UE to a file
 */
@@ -567,14 +593,16 @@ main (int argc, char *argv[])
 
 
   CommandLine cmd (__FILE__);
-  cmd.Parse (argc, argv);
-  ConfigStore inputConfig;
-  inputConfig.ConfigureDefaults ();
 
   // Parameters for HO algorithm; 3GPP 36.331
   cmd.AddValue ("hysteresis", "Hysteresis value (default = 3 dB); standard (#36.331) limits to {0, 0.5, ... 15}", hysteresis);
   cmd.AddValue ("timeToTrigger", "Time to trigger (TTT) (default = 256 ms); standard (#36.331) limits to {0, 40, 64, 80, 100, 128, 160, 256, 320, 480, 512, 640, 1024, 1280}", timeToTrigger);
   cmd.AddValue ("a3Offset", "Offset value for A3 HO algorithm (Warning: custom parameter that may result in errors); standard (#36.331) limits to {-15, -14.5, ... -0.5, 0, 0.5, ... 14.5, 15}", a3Offset);
+
+  cmd.Parse (argc, argv);
+  ConfigStore inputConfig;
+  inputConfig.ConfigureDefaults ();
+
 
   // parse again so you can override input file default values via command line
   cmd.Parse (argc, argv); 
@@ -1078,7 +1106,9 @@ main (int argc, char *argv[])
   
     g_tcpCongStateTrace.open ("results/cong-state_" + std::to_string(hysteresis) + "_" + std::to_string(timeToTrigger) + "_" + std::to_string(useUdp) + "_.dat", std::ofstream::out);
     g_tcpCongStateTrace << "# time   IMSI     OldState     NewState" << std::endl;
-    Config::Connect ("/NodeList/*/$ns3::TcpL4Protocol/SocketList/*/CongState", MakeCallback (&CongStateTrace)); 
+    g_tcpCwndChangeTrace.open ("tmp/cwnd-change_" + std::to_string(hysteresis) + "_" + std::to_string(timeToTrigger) + "_" + std::to_string(useUdp) + "_.dat", std::ofstream::out);
+    g_tcpCwndChangeTrace << "# time   IMSI     OldCwnd     NewCwnd" << std::endl;
+    Simulator::Schedule (Seconds (1.001), &ConnectCongestionTrace);
   
   }
 
@@ -1096,5 +1126,10 @@ main (int argc, char *argv[])
 
   lteHelper = 0;
   Simulator::Destroy ();
+
+  g_packetSinkRx.close ();
+  g_tcpCongStateTrace.close ();
+  g_tcpCwndChangeTrace.close ();
+  
   return 0;
 }
