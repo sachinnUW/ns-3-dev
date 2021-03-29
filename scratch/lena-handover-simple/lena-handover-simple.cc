@@ -714,7 +714,7 @@ LenaHandoverSimple::SetChannelModel () {
 
   m_lteHelper->SetAttribute ("FadingModel", StringValue ("ns3::TraceFadingLossModel"));
   // script launched by test.py
-  m_lteHelper->SetFadingModelAttribute ("TraceFilename", StringValue ("src/lte/model/fading-traces/fading_trace_EVA_60kmph.fad"));
+  m_lteHelper->SetFadingModelAttribute ("TraceFilename", StringValue ("src/lte/model/fading-traces/fading_trace_EVA_" + std::to_string(int(m_speed)) + "ms.fad"));
   
 }
 
