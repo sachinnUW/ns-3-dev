@@ -432,6 +432,7 @@ LenaHandoverSimple::NotifyPacketSinkRx (Ptr<const Packet> packet,
 		 << std::setw (5) << packet->GetSize () 
 		 << std::setw (5) << " " << receiver 
 		 << std::endl;
+  m_rxByteCounter += packet->GetSize ();
 
 }
 
@@ -869,6 +870,9 @@ LenaHandoverSimple::Run () {
 
   // Destroy the simulator.
   Simulator::Destroy ();
+
+  // Print out the throughput.
+  std::cout << "Throughput " << (m_rxByteCounter/m_simTime) << " Mbit/s";
 
   // Close any open file descriptors
   CloseFileDescriptors ();
