@@ -79,6 +79,9 @@ private:
   uint16_t m_counterN310FirsteNB;	// out-of-sync counter for first eNB
   Time m_t310StartTimeFirstEnb;		// t310 start time for first eNB
 
+  // Variable for packet counting
+  uint64_t m_rxByteCounter;		// variable to count the number of bytes received
+
   // Specifics for HO algo
   const std::string m_hoAlgo;		// possible values: 'A3Rsrp', 'A2A4Rsrq', 'NoOp'; default to 'A3Rsrp'
   const double m_hyst;			// [dB] standards limit to 0:0.5:15 dB; default to 3 dB

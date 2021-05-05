@@ -45,6 +45,7 @@ NS_LOG_COMPONENT_DEFINE ("LenaDualStripe");
 std::ofstream g_packetSinkRx;
 std::ofstream g_tcpCongStateTrace;
 std::ofstream g_tcpCwndChangeTrace;
+uint64_t g_rxByteCounter;
 
 /**
  * \param context, IMSI, cellId, RNTI, targetCellId reported from 'LteUeRrc/HandoverStart' event
@@ -212,6 +213,7 @@ NotifyPacketSinkRx (std::string context,
 		 << std::setw (5) << packet->GetSize () 
 		 << std::setw (5) << " " << address 
 		 << std::setw (5) << " " << receiver << std::endl;
+  g_rxByteCounter += packet->GetSize ();
 
 }
 
@@ -1130,6 +1132,9 @@ main (int argc, char *argv[])
 
   lteHelper = 0;
   Simulator::Destroy ();
+
+  // Print out the throughput.
+  std::cout << "Throughput " << (g_rxByteCounter/simTime) << " Mbit/s";
 
   g_packetSinkRx.close ();
   g_tcpCongStateTrace.close ();
