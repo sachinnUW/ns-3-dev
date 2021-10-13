@@ -569,14 +569,14 @@ static ns3::GlobalValue g_srsPeriodicity ("srsPeriodicity",
                                           "greater than the number of UEs per eNB)",
                                           ns3::UintegerValue (80),
                                           ns3::MakeUintegerChecker<uint16_t> ());
-static ns3::GlobalValue g_outdoorUeMinSpeed ("outdoorUeMinSpeed",
+/*static ns3::GlobalValue g_outdoorUeMinSpeed ("outdoorUeMinSpeed",
                                              "Minimum speed value of macro UE with random waypoint model [m/s].",
                                              ns3::DoubleValue (16.6667),
                                              ns3::MakeDoubleChecker<double> ());
 static ns3::GlobalValue g_outdoorUeMaxSpeed ("outdoorUeMaxSpeed",
                                              "Maximum speed value of macro UE with random waypoint model [m/s].",
                                              ns3::DoubleValue (16.6667),
-                                             ns3::MakeDoubleChecker<double> ());
+                                             ns3::MakeDoubleChecker<double> ());*/
 
 int
 main (int argc, char *argv[])
@@ -592,7 +592,10 @@ main (int argc, char *argv[])
   double hysteresis = 3;                        // [dB] standards limit to 0:0.5:15 dB; default to 3 dB; parameter related to RSRP variation after entering A3 condition and before triggering HO
   uint16_t timeToTrigger = 256;                 // [ms] standards limit to {0, 40, 64, 80, 100, 128, 160, 256, 320, 480, 512, 640, 1024, 1280}; default to 256 ms; time for which the A3 entering condition must be met to trigger HO
   double a3Offset = 0;                          // [dB] standards limit to: -15 dB:0:15 dB; default to 0 dB inside setHOAlgoVars; parameter for RSRP difference to trigger HO in the case of A3 algorithm
-
+  double speed = 10;                            // [m/s] speed for mobility model
+  double parameter = 0;                         // Parameter for mobility model
+  bool disableRlfDetection = false;             // Disable RLF detection at eNB based on this.
+  std::string model = "waypoint";               // Mobility model as 'Waypoint', 'Outdoor', '2DWalk', 'Direction' and 'Gauss'
 
   CommandLine cmd (__FILE__);
 
@@ -600,6 +603,10 @@ main (int argc, char *argv[])
   cmd.AddValue ("hysteresis", "Hysteresis value (default = 3 dB); standard (#36.331) limits to {0, 0.5, ... 15}", hysteresis);
   cmd.AddValue ("timeToTrigger", "Time to trigger (TTT) (default = 256 ms); standard (#36.331) limits to {0, 40, 64, 80, 100, 128, 160, 256, 320, 480, 512, 640, 1024, 1280}", timeToTrigger);
   cmd.AddValue ("a3Offset", "Offset value for A3 HO algorithm (Warning: custom parameter that may result in errors); standard (#36.331) limits to {-15, -14.5, ... -0.5, 0, 0.5, ... 14.5, 15}", a3Offset);
+  cmd.AddValue ("speed", "Speed for mobility model", speed);
+  cmd.AddValue ("parameter", "Parameter for mobility model", parameter);
+  cmd.AddValue ("disableRlFDetection", "Disable RLF detection.", disableRlfDetection);
+  cmd.AddValue ("model", "Mobility model (waypoint, outdoor, walk, direction, gauss)", model);
 
   cmd.Parse (argc, argv);
   ConfigStore inputConfig;
@@ -669,12 +676,13 @@ main (int argc, char *argv[])
   uint16_t numBearersPerUe = uintegerValue.Get ();
   GlobalValue::GetValueByName ("srsPeriodicity", uintegerValue);
   uint16_t srsPeriodicity = uintegerValue.Get ();
-  GlobalValue::GetValueByName ("outdoorUeMinSpeed", doubleValue);
-  uint16_t outdoorUeMinSpeed = doubleValue.Get ();
-  GlobalValue::GetValueByName ("outdoorUeMaxSpeed", doubleValue);
-  uint16_t outdoorUeMaxSpeed = doubleValue.Get ();
+  //GlobalValue::GetValueByName ("outdoorUeMinSpeed", doubleValue);
+  //uint16_t outdoorUeMinSpeed = doubleValue.Get ();
+  //GlobalValue::GetValueByName ("outdoorUeMaxSpeed", doubleValue);
+  //uint16_t outdoorUeMaxSpeed = doubleValue.Get ();
 
   Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (srsPeriodicity));
+  Config::SetDefault ("ns3::LteUePhy::EnableRlfDetection", BooleanValue (!disableRlfDetection));
 
   Box macroUeBox;
   double ueZ = 1.5;
@@ -749,7 +757,7 @@ main (int argc, char *argv[])
   if (!fadingTrace.empty ())
     {
       lteHelper->SetAttribute ("FadingModel", StringValue ("ns3::TraceFadingLossModel"));
-      lteHelper->SetFadingModelAttribute ("TraceFilename", StringValue (fadingTrace));
+      lteHelper->SetFadingModelAttribute ("TraceFilename", StringValue (StringValue ("src/lte/model/fading-traces/fading_trace_EVA_" + std::to_string(int(speed)) + "ms.fad")));
     }
 
   Ptr<PointToPointEpcHelper> epcHelper;
@@ -811,18 +819,33 @@ main (int argc, char *argv[])
   NetDeviceContainer homeUeDevs = lteHelper->InstallUeDevice (homeUes);
 
   // macro Ues
-  NS_LOG_LOGIC ("randomly allocating macro UEs in " << macroUeBox << " speedMin " << outdoorUeMinSpeed << " speedMax " << outdoorUeMaxSpeed);
-  if (outdoorUeMaxSpeed!=0.0)
+  if (speed!=0.0)
     {
-      mobility.SetMobilityModel ("ns3::SteadyStateRandomWaypointMobilityModel");
-      
-      Config::SetDefault ("ns3::SteadyStateRandomWaypointMobilityModel::MinX", DoubleValue (macroUeBox.xMin));
-      Config::SetDefault ("ns3::SteadyStateRandomWaypointMobilityModel::MinY", DoubleValue (macroUeBox.yMin));
-      Config::SetDefault ("ns3::SteadyStateRandomWaypointMobilityModel::MaxX", DoubleValue (macroUeBox.xMax));
-      Config::SetDefault ("ns3::SteadyStateRandomWaypointMobilityModel::MaxY", DoubleValue (macroUeBox.yMax));
-      Config::SetDefault ("ns3::SteadyStateRandomWaypointMobilityModel::Z", DoubleValue (ueZ));
-      Config::SetDefault ("ns3::SteadyStateRandomWaypointMobilityModel::MaxSpeed", DoubleValue (outdoorUeMaxSpeed));
-      Config::SetDefault ("ns3::SteadyStateRandomWaypointMobilityModel::MinSpeed", DoubleValue (outdoorUeMinSpeed));
+
+      if (model == "waypoint")
+              mobility.SetMobilityModel ("ns3::SteadyStateRandomWaypointMobilityModel",
+                                         "MinX", DoubleValue (macroUeBox.xMin),
+                                         "MinY", DoubleValue (macroUeBox.yMin),
+                                         "MaxX", DoubleValue (macroUeBox.xMax),
+                                         "MaxY", DoubleValue (macroUeBox.yMax),
+                                         "Z", DoubleValue (ueZ),
+                                         "MaxSpeed", DoubleValue (speed),
+                                         "MinSpeed", DoubleValue (speed));
+      else if (model == "direction")
+              mobility.SetMobilityModel("ns3::RandomDirection2dMobilityModel",
+                                        "Bounds", RectangleValue (Rectangle (macroUeBox.xMin, macroUeBox.xMax, macroUeBox.yMin, macroUeBox.yMax)),
+                                        "Speed", StringValue ("ns3::UniformRandomVariable[Min=50.0|Max=50.0]"));
+      else if (model == "walk")
+              mobility.SetMobilityModel("ns3::RandomWalk2dMobilityModel",
+                                        "Bounds", RectangleValue (Rectangle (macroUeBox.xMin, macroUeBox.xMax, macroUeBox.yMin, macroUeBox.yMax)),
+                                        "Speed", StringValue ("ns3::UniformRandomVariable[Min=50.0|Max=50.0]"));
+      else if (model == "outdoor")
+              mobility.SetMobilityModel("ns3::RandomWalk2dOutdoorMobilityModel",
+                                        "Bounds", RectangleValue (Rectangle (macroUeBox.xMin, macroUeBox.xMax, macroUeBox.yMin, macroUeBox.yMax)),
+                                        "Speed", StringValue ("ns3::NormalRandomVariable[Mean=50.0|Variance=12.0]"));
+      else if (model == "gauss")
+              mobility.SetMobilityModel("ns3::GaussMarkovMobilityModel",
+                                        "Bounds", BoxValue (Box (macroUeBox.xMin, macroUeBox.xMax, macroUeBox.yMin, macroUeBox.yMax, 0, ueZ)));
 
       // this is not used since SteadyStateRandomWaypointMobilityModel
       // takes care of initializing the positions;  however we need to
