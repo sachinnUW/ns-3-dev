@@ -1,0 +1,2 @@
+msg="X2-U data received but no X2uTeidInfo found", +3.680419900s 1 file=../../src/lte/model/lte-enb-rrc.cc, line=2672
+terminate called without an active exception
