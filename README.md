@@ -3,7 +3,7 @@ Ns-3 + SEM for HO Modeling and Validation
 
 ## Paper in Question
 
-Cite as "Sachin Nayak and Sumit Roy. 2022. LTE Handover Modeling and Validation with ns-3 using SEM. In2022 Workshop on ns-3 (WNS3 2022), June 22–23,2022, U.S. NIST, Gaithersburg, MD, USA.ACM, New York, NY, USA, 8 pages.https://doi.org/10.1145/3460797.3460800".
+Cite as "Sachin Nayak and Sumit Roy. 2022. LTE Handover Modeling and Validation with ns-3 using SEM. In 2022 Workshop on ns-3 (WNS3 2022), June 22–23,2022, U.S. NIST, Gaithersburg, MD, USA. ACM, New York, NY, USA, 8 pages.https://doi.org/10.1145/3460797.3460800".
 
 ## Cloning Code
 
