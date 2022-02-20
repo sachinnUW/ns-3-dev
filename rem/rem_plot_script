@@ -2,5 +2,9 @@ set view map;
 set xlabel "X"
 set ylabel "Y"
 set cblabel "SINR (dB)"
+set size 1,1
+set xtics font ",5"
+set ytics font ",5" 
+set cbtics font ",5" 
 unset key
 plot "lena-handover-many.rem" using ($1):($2):(10*log10($4)) with image
